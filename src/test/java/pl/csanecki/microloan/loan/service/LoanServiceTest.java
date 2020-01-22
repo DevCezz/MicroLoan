@@ -10,6 +10,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import pl.csanecki.microloan.loan.dto.LoanQuery;
 import pl.csanecki.microloan.loan.dto.UserRequest;
 import pl.csanecki.microloan.loan.model.Disposition;
+import pl.csanecki.microloan.loan.model.Loan;
 import pl.csanecki.microloan.loan.model.NegativeDisposition;
 import pl.csanecki.microloan.loan.model.PositiveDisposition;
 import pl.csanecki.microloan.loan.repository.LoanRepository;
@@ -18,14 +19,18 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import static pl.csanecki.microloan.loan.service.LoanFixture.LoanBuilder;
 
 @ExtendWith(SpringExtension.class)
 class LoanServiceTest {
     private static int MAX_LOAN_VALUE = 10000;
     private static int MAX_RISK_HOUR = 6;
     private static int MIN_RISK_HOUR = 0;
+    private static String CLIENT_IP = "10.0.0.90";
 
     private LoanService loanService;
 
@@ -38,7 +43,7 @@ class LoanServiceTest {
     void setUp() {
         loanService = new LoanServiceImpl(loanRepository);
         mockRequest = new MockHttpServletRequest();
-        mockRequest.addHeader("X-FORWARDED-FOR", "10.0.0.90");
+        mockRequest.addHeader("X-FORWARDED-FOR", CLIENT_IP);
         ReflectionTestUtils.setField(loanService, "loanMaxAmount", BigDecimal.valueOf(MAX_LOAN_VALUE));
         ReflectionTestUtils.setField(loanService, "maxRiskHour", MAX_RISK_HOUR);
         ReflectionTestUtils.setField(loanService, "minRiskHour", MIN_RISK_HOUR);
