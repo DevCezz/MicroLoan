@@ -5,7 +5,7 @@ import pl.csanecki.microloan.loan.model.Loan;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-public class LoanFixture {
+class LoanFixture {
     static class LoanBuilder {
         private Long id;
         private String clientIp;
