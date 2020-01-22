@@ -1,5 +1,9 @@
 package pl.csanecki.microloan.loan.service;
 
-public interface LoanService {
+import pl.csanecki.microloan.loan.dto.LoanQuery;
+import pl.csanecki.microloan.loan.dto.UserRequest;
+import pl.csanecki.microloan.loan.model.Disposition;
 
+public interface LoanService {
+    Disposition considerLoanRequest(UserRequest mockUserRequest, LoanQuery mockLoanQuery);
 }

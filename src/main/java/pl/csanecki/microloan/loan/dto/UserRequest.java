@@ -3,14 +3,15 @@ package pl.csanecki.microloan.loan.dto;
 import javax.servlet.http.HttpServletRequest;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 public class UserRequest {
     private String ip;
-    private Instant requestTimestamp;
+    private LocalDateTime requestTimestamp;
 
     private UserRequest(HttpServletRequest request) {
         this.ip = resolveIpAddressFrom(request);
-        this.requestTimestamp = Clock.systemUTC().instant();
+        this.requestTimestamp = LocalDateTime.now();
     }
 
     public static UserRequest extractFrom(HttpServletRequest request) {
@@ -34,7 +35,7 @@ public class UserRequest {
         return ip;
     }
 
-    public Instant getRequestTimestamp() {
+    public LocalDateTime getRequestTimestamp() {
         return requestTimestamp;
     }
 }
