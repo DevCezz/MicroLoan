@@ -20,9 +20,8 @@ import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
+import static org.mockito.Mockito.*;
 import static pl.csanecki.microloan.loan.service.LoanFixture.LoanBuilder;
 
 @ExtendWith(SpringExtension.class)
@@ -98,5 +97,22 @@ class LoanServiceTest {
 
         //then
         assertTrue(disposition instanceof NegativeDisposition);
+    }
+
+    @Test
+    void shouldSaveLoanForProperLoanQuery() {
+        //given
+        BigDecimal queryLoanAmount = BigDecimal.valueOf(MAX_LOAN_VALUE);
+        LoanQuery mockLoanQuery = new LoanQuery(queryLoanAmount, 36);
+
+        LocalDateTime expectedTimestamp = LocalDateTime.of(2020, 1, 20, 13, 32);
+        UserRequest mockUserRequest = mock(UserRequest.class);
+        when(mockUserRequest.getRequestTimestamp()).thenReturn(expectedTimestamp);
+
+        //when
+        loanService.considerLoanRequest(mockUserRequest, mockLoanQuery);
+
+        //then
+        verify(loanRepository, times(1)).save(any());
     }
 }

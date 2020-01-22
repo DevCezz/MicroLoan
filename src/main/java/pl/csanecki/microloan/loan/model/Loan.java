@@ -14,6 +14,15 @@ public class Loan {
     private LocalDate endingDate;
     private BigDecimal amount;
 
+    public Loan() {}
+
+    public Loan(String clientIp, LocalDate startingDate, LocalDate endingDate, BigDecimal amount) {
+        this.clientIp = clientIp;
+        this.startingDate = startingDate;
+        this.endingDate = endingDate;
+        this.amount = amount;
+    }
+
     public Long getId() {
         return id;
     }

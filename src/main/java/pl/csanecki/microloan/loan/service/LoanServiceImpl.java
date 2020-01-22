@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import pl.csanecki.microloan.loan.dto.LoanQuery;
 import pl.csanecki.microloan.loan.dto.UserRequest;
 import pl.csanecki.microloan.loan.model.Disposition;
+import pl.csanecki.microloan.loan.model.Loan;
 import pl.csanecki.microloan.loan.model.NegativeDisposition;
 import pl.csanecki.microloan.loan.model.PositiveDisposition;
 import pl.csanecki.microloan.loan.repository.LoanRepository;
@@ -41,6 +42,9 @@ public class LoanServiceImpl implements LoanService {
             return new NegativeDisposition();
         }
 
+        loanRepository.save(new Loan(userRequest.getIp(), userRequest.getRequestTimestamp().toLocalDate(),
+                userRequest.getRequestTimestamp().toLocalDate().plusMonths(loanQuery.getPeriodInMonths()),
+                loanQuery.getAmount()));
         return new PositiveDisposition();
     }
 
