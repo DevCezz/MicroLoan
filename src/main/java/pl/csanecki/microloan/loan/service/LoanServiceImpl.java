@@ -18,6 +18,12 @@ public class LoanServiceImpl implements LoanService {
     @Value("${loan.max-amount}")
     private BigDecimal loanMaxAmount;
 
+    @Value("${loan.risk.max-hour}")
+    private int maxRiskHour;
+
+    @Value("${loan.risk.min-hour}")
+    private int minRiskHour;
+
     private LoanRepository loanRepository;
 
     @Autowired
@@ -27,14 +33,27 @@ public class LoanServiceImpl implements LoanService {
 
     @Override
     public Disposition considerLoanRequest(UserRequest userRequest, LoanQuery loanQuery) {
-        if(maxAmountOfValueIsLessThan(loanQuery.getAmount())) {
+        if(maxLoanAmountIsLessThan(loanQuery.getAmount())) {
+            return new NegativeDisposition();
+        }
+
+        if(maxLoanAmountEquals(loanQuery.getAmount()) && queryWasMadeInRiskHours(userRequest)) {
             return new NegativeDisposition();
         }
 
         return new PositiveDisposition();
     }
 
-    private boolean maxAmountOfValueIsLessThan(BigDecimal queryAmount) {
+    private boolean maxLoanAmountIsLessThan(BigDecimal queryAmount) {
         return loanMaxAmount.compareTo(queryAmount) < 0;
+    }
+
+    private boolean maxLoanAmountEquals(BigDecimal queryAmount) {
+        return loanMaxAmount.compareTo(queryAmount) == 0;
+    }
+
+    private boolean queryWasMadeInRiskHours(UserRequest userRequest) {
+        return userRequest.getRequestTimestamp().getHour() >= minRiskHour &&
+                userRequest.getRequestTimestamp().getHour() < maxRiskHour;
     }
 }

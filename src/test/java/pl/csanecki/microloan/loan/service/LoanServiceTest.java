@@ -24,6 +24,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(SpringExtension.class)
 class LoanServiceTest {
     private static int MAX_LOAN_VALUE = 10000;
+    private static int MAX_RISK_HOUR = 6;
+    private static int MIN_RISK_HOUR = 0;
 
     private LoanService loanService;
 
@@ -38,6 +40,8 @@ class LoanServiceTest {
         mockRequest = new MockHttpServletRequest();
         mockRequest.addHeader("X-FORWARDED-FOR", "10.0.0.90");
         ReflectionTestUtils.setField(loanService, "loanMaxAmount", BigDecimal.valueOf(MAX_LOAN_VALUE));
+        ReflectionTestUtils.setField(loanService, "maxRiskHour", MAX_RISK_HOUR);
+        ReflectionTestUtils.setField(loanService, "minRiskHour", MIN_RISK_HOUR);
     }
 
     @Test
@@ -64,6 +68,23 @@ class LoanServiceTest {
         LoanQuery mockLoanQuery = new LoanQuery(queryLoanAmount, 36);
 
         LocalDateTime expectedTimestamp = LocalDateTime.of(2020, 1, 20, 13, 30);
+        UserRequest mockUserRequest = mock(UserRequest.class);
+        when(mockUserRequest.getRequestTimestamp()).thenReturn(expectedTimestamp);
+
+        //when
+        Disposition disposition = loanService.considerLoanRequest(mockUserRequest, mockLoanQuery);
+
+        //then
+        assertTrue(disposition instanceof NegativeDisposition);
+    }
+
+    @Test
+    void shouldRejectLoanQueryBecauseWasSentBetweenMidnightAndSixAmForMaxAmount() {
+        //given
+        BigDecimal queryLoanAmount = BigDecimal.valueOf(MAX_LOAN_VALUE);
+        LoanQuery mockLoanQuery = new LoanQuery(queryLoanAmount, 36);
+
+        LocalDateTime expectedTimestamp = LocalDateTime.of(2020, 1, 20, 2, 30);
         UserRequest mockUserRequest = mock(UserRequest.class);
         when(mockUserRequest.getRequestTimestamp()).thenReturn(expectedTimestamp);
 
