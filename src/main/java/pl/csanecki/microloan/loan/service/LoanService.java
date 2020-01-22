@@ -5,5 +5,5 @@ import pl.csanecki.microloan.loan.dto.UserRequest;
 import pl.csanecki.microloan.loan.model.Disposition;
 
 public interface LoanService {
-    Disposition considerLoanRequest(UserRequest mockUserRequest, LoanQuery mockLoanQuery);
+    Disposition considerLoanRequest(UserRequest userRequest, LoanQuery loanQuery);
 }
