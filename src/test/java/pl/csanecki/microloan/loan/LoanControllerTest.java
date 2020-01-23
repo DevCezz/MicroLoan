@@ -10,7 +10,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import pl.csanecki.microloan.loan.dto.LoanQuery;
 import pl.csanecki.microloan.loan.dto.UserRequest;
-import pl.csanecki.microloan.loan.model.Disposition;
 import pl.csanecki.microloan.loan.model.LoanStatus;
 import pl.csanecki.microloan.loan.model.PositiveDisposition;
 import pl.csanecki.microloan.loan.service.LoanService;
@@ -25,6 +24,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(LoanController.class)
 class LoanControllerTest {
 
+    public static final String DISPOSITION_MESSAGE = "Pożyczka została pomyślnie wydana";
+    public static final LoanStatus LOAN_STATUS = LoanStatus.GRANTED;
+    public static final long LOAN_ID = 27L;
     @Autowired
     private MockMvc mockMvc;
 
@@ -34,7 +36,7 @@ class LoanControllerTest {
     @Test
     void shouldGrantLoan() throws Exception {
         //given
-        Disposition disposition = new PositiveDisposition("Pożyczka została pomyślnie wydana", LoanStatus.GRANTED, 27L);
+        PositiveDisposition disposition = new PositiveDisposition(DISPOSITION_MESSAGE, LOAN_STATUS, LOAN_ID);
 
         //when
         when(loanService.considerLoanRequest(any(UserRequest.class), any(LoanQuery.class))).thenReturn(disposition);
@@ -43,16 +45,15 @@ class LoanControllerTest {
         mockMvc
                 .perform(post("/loan/query")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{ \"amount\":10000, \"periodInMonths\":36 }")
+                        .content("{ \"amount\":3000, \"periodInMonths\":36 }")
                         .characterEncoding("UTF-8")
                         .accept(MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML))
                 .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json("{ \"message\":\"Pożyczka została pomyślnie wydana\", \"loanStatus\":\"GRANTED\", \"loanId\":27 }"))
-                .andExpect(header().string("Location", "/loan/postpone/27"))
-                .andExpect(jsonPath("$.message").value("Pożyczka została pomyślnie wydana"))
-                .andExpect(jsonPath("$.loanStatus").value("GRANTED"))
-                .andExpect(jsonPath("$.loanId").value(27));
+                .andExpect(header().string("Location", "/loan/postpone/" + disposition.getLoanId()))
+                .andExpect(jsonPath("$.message").value(disposition.getMessage()))
+                .andExpect(jsonPath("$.loanStatus").value(disposition.getLoanStatus().toString()))
+                .andExpect(jsonPath("$.loanId").value(disposition.getLoanId()));
     }
 }
