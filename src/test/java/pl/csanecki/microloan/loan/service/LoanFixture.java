@@ -9,26 +9,38 @@ import java.time.LocalDate;
 class LoanFixture {
     private static long GRANTED_LOAN_ID = 34L;
 
-    static Loan grantedLoanOnlyWithId() {
+    static Loan grantedLoan() {
         return LoanBuilder
                 .newLoan()
                 .withId(GRANTED_LOAN_ID)
+                .withStatus(LoanStatus.GRANTED)
                 .build();
     }
 
-    static Loan grantedLoanWithEndingDate(LocalDate endingDate) {
+    static Loan grantedLoanWithClientIp(String clientIp) {
         return LoanBuilder
                 .newLoan()
                 .withId(GRANTED_LOAN_ID)
+                .withClientIp(clientIp)
+                .withStatus(LoanStatus.GRANTED)
+                .build();
+    }
+
+    static Loan grantedLoanWithEndingDateAndClientIp(LocalDate endingDate, String clientIp) {
+        return LoanBuilder
+                .newLoan()
+                .withId(GRANTED_LOAN_ID)
+                .withClientIp(clientIp)
                 .withStatus(LoanStatus.GRANTED)
                 .withEndingDate(endingDate)
                 .build();
     }
 
-    static Loan postponedLoan() {
+    static Loan postponedLoanWithClientIp(String clientIp) {
         return LoanBuilder
                 .newLoan()
                 .withId(GRANTED_LOAN_ID)
+                .withClientIp(clientIp)
                 .withStatus(LoanStatus.POSTPONED)
                 .build();
     }

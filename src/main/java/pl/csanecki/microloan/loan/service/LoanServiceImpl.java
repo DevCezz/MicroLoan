@@ -42,6 +42,10 @@ public class LoanServiceImpl implements LoanService {
         if(loanEntity.isPresent()) {
             Loan foundedLoan = loanEntity.get();
 
+            if(!foundedLoan.getClientIp().equals(loanPostponementQuery.getClientId())) {
+                return new NegativePostponement("Nie można odroczyć pożyczki o id " + loanPostponementQuery.getLoanId());
+            }
+
             if(foundedLoan.getStatus().equals(LoanStatus.POSTPONED)) {
                 return new NegativePostponement("Nie można odroczyć już odroczonej pożyczki");
             }

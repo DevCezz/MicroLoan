@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static pl.csanecki.microloan.loan.service.LoanFixture.*;
-import static pl.csanecki.microloan.loan.service.LoanFixture.postponedLoan;
 
 @ExtendWith(SpringExtension.class)
 class LoanServiceTest {
@@ -33,6 +32,7 @@ class LoanServiceTest {
     private static int MAX_RISK_HOUR = 6;
     private static int MIN_RISK_HOUR = 0;
     private static String CLIENT_IP = "10.0.0.90";
+    private static String DIFFRENT_CLIENT_IP = "10.0.0.91";
 
     private LoanService loanService;
 
@@ -62,7 +62,7 @@ class LoanServiceTest {
         //given
         LoanQuery mockLoanQuery = loanQueryForMaxValue();
         UserRequest mockUserRequest = commonUserRequest();
-        Loan grantedLoan = grantedLoanOnlyWithId();
+        Loan grantedLoan = grantedLoan();
 
         when(loanRepository.save(any())).thenReturn(grantedLoan);
 
@@ -113,7 +113,7 @@ class LoanServiceTest {
         //given
         LoanQuery mockLoanQuery = loanQueryForMaxValue();
         UserRequest mockUserRequest = commonUserRequest();
-        Loan grantedLoan = grantedLoanOnlyWithId();
+        Loan grantedLoan = grantedLoan();
 
         when(loanRepository.save(any())).thenReturn(grantedLoan);
 
@@ -145,7 +145,7 @@ class LoanServiceTest {
     void shouldPostponeEndingDateOfLoanByTwoWeeks() {
         //given
         LocalDate date = LocalDate.of(2020, 3, 20);
-        Loan grantedLoan = grantedLoanWithEndingDate(date);
+        Loan grantedLoan = grantedLoanWithEndingDateAndClientIp(date, CLIENT_IP);
         LoanPostponementQuery loanPostponementQuery = new LoanPostponementQuery(CLIENT_IP, grantedLoan.getId());
 
         when(loanRepository.findById(grantedLoan.getId())).thenReturn(Optional.of(grantedLoan));
@@ -163,7 +163,7 @@ class LoanServiceTest {
     void shouldNotPostponeLoanWhichNotExists() {
         //given
         LocalDate date = LocalDate.of(2020, 3, 20);
-        Loan grantedLoan = grantedLoanWithEndingDate(date);
+        Loan grantedLoan = grantedLoanWithEndingDateAndClientIp(date, CLIENT_IP);
         LoanPostponementQuery loanPostponementQuery = new LoanPostponementQuery(CLIENT_IP, grantedLoan.getId());
 
         when(loanRepository.findById(grantedLoan.getId())).thenReturn(Optional.empty());
@@ -179,7 +179,7 @@ class LoanServiceTest {
     @Test
     void shouldNotPostponeLoanWhichOnceHasBeenPostponed() {
         //given
-        Loan postponedLoan = postponedLoan();
+        Loan postponedLoan = postponedLoanWithClientIp(CLIENT_IP);
         LoanPostponementQuery loanPostponementQuery = new LoanPostponementQuery(CLIENT_IP, postponedLoan.getId());
 
         when(loanRepository.findById(postponedLoan.getId())).thenReturn(Optional.of(postponedLoan));
@@ -190,6 +190,22 @@ class LoanServiceTest {
         //then
         assertTrue(postponementDecision instanceof NegativePostponement);
         assertEquals("Nie można odroczyć już odroczonej pożyczki", postponementDecision.getMessage());
+    }
+
+    @Test
+    void shouldNotPostponeLoanWhenPostponementIsNotMadeByOwner() {
+        //given
+        Loan grantedLoan = grantedLoanWithClientIp(CLIENT_IP);
+        LoanPostponementQuery loanPostponementQuery = new LoanPostponementQuery(DIFFRENT_CLIENT_IP, grantedLoan.getId());
+
+        when(loanRepository.findById(grantedLoan.getId())).thenReturn(Optional.of(grantedLoan));
+
+        //when
+        PostponementDecision postponementDecision = loanService.postponeLoan(loanPostponementQuery);
+
+        //then
+        assertTrue(postponementDecision instanceof NegativePostponement);
+        assertEquals("Nie można odroczyć pożyczki o id " + loanPostponementQuery.getLoanId(), postponementDecision.getMessage());
     }
 
     private LoanQuery loanQueryForMaxValue() {
