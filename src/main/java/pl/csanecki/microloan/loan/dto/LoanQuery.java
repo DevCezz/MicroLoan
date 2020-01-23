@@ -7,6 +7,8 @@ public class LoanQuery {
     private BigDecimal amount;
     private int periodInMonths;
 
+    public LoanQuery() {}
+
     public LoanQuery(BigDecimal amount, int periodInMonths) {
         this.amount = amount;
         this.periodInMonths = periodInMonths;

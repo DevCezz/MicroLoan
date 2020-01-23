@@ -66,7 +66,7 @@ class LoanServiceTest {
         //then
         assertTrue(disposition instanceof PositiveDisposition);
         assertEquals(LoanStatus.GRANTED, disposition.getLoanStatus());
-        assertEquals("Pożczyka została pomyślnie wydana", disposition.getMessage());
+        assertEquals("Pożyczka została pomyślnie wydana", disposition.getMessage());
 
         PositiveDisposition positiveDisposition = (PositiveDisposition) disposition;
         assertEquals(grantedLoan.getId(), positiveDisposition.getLoanId());

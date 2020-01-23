@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import pl.csanecki.microloan.loan.dto.LoanQuery;
 import pl.csanecki.microloan.loan.dto.UserRequest;
+import pl.csanecki.microloan.loan.model.Disposition;
 import pl.csanecki.microloan.loan.service.LoanService;
 
 import javax.servlet.http.HttpServletRequest;
@@ -21,9 +22,9 @@ public class LoanController {
     }
 
     @PostMapping("/loan/query")
-    String queryForLoan(@RequestBody LoanQuery loanQuery, HttpServletRequest request) {
+    Disposition queryForLoan(@RequestBody LoanQuery loanQuery, HttpServletRequest request) {
         UserRequest userRequest = UserRequest.extractFrom(request);
 
-        return "Timestamp: " + userRequest.getRequestTimestamp();
+        return loanService.considerLoanRequest(userRequest, loanQuery);
     }
 }

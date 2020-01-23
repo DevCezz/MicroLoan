@@ -1,20 +1,18 @@
 package pl.csanecki.microloan.loan.model;
 
-import javax.persistence.Entity;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
 public class Loan {
     private @Id @GeneratedValue Long id;
-    private String clientIp;
-    private LocalDate startingDate;
-    private LocalDate endingDate;
-    private BigDecimal amount;
-    private @Enumerated LoanStatus status;
+    private @NotNull String clientIp;
+    private @NotNull LocalDate startingDate;
+    private @NotNull LocalDate endingDate;
+    private @NotNull BigDecimal amount;
+    private @NotNull @Enumerated(EnumType.STRING) LoanStatus status;
 
     public Loan() {}
 

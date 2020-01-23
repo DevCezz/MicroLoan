@@ -41,7 +41,7 @@ public class LoanServiceImpl implements LoanService {
         }
 
         Loan loan = registerLoan(userRequest, loanQuery);
-        return new PositiveDisposition("Pożczyka została pomyślnie wydana", LoanStatus.GRANTED, loan.getId());
+        return new PositiveDisposition("Pożyczka została pomyślnie wydana", LoanStatus.GRANTED, loan.getId());
     }
 
     private boolean isQualifiedForRejection(UserRequest userRequest, LoanQuery loanQuery) {
@@ -72,9 +72,10 @@ public class LoanServiceImpl implements LoanService {
     private Loan registerLoan(UserRequest userRequest, LoanQuery loanQuery) {
         Loan loan = new Loan();
         loan.setClientIp(userRequest.getIp());
-        loan.setAmount(loan.getAmount());
+        loan.setAmount(loanQuery.getAmount());
         loan.setStartingDate(userRequest.getRequestTimestamp().toLocalDate());
         loan.setEndingDate(calculateEndingDate(userRequest, loanQuery));
+        loan.setStatus(LoanStatus.GRANTED);
 
         return loanRepository.save(loan);
     }
