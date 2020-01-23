@@ -36,12 +36,37 @@ public class LoanServiceImpl implements LoanService {
             return new NegativeDisposition("Nie spełniono kryteriów do wydania pożyczki", LoanStatus.REJECTED);
         }
 
-        if(loanRepository.countLoansByClientIpAndStatus(userRequest.getIp(), LoanStatus.GRANTED) + 1 >= 3) {
+        if(isThirdLoanRequest(userRequest)) {
             return new NegativeDisposition("Nie można wydać trzeciej pożyczki", LoanStatus.REJECTED);
         }
 
         Loan loan = registerLoan(userRequest, loanQuery);
         return new PositiveDisposition("Pożczyka została pomyślnie wydana", LoanStatus.GRANTED, loan.getId());
+    }
+
+    private boolean isQualifiedForRejection(UserRequest userRequest, LoanQuery loanQuery) {
+        return isMaxLoanAmountLessThan(loanQuery.getAmount()) || isInRiskHourForMaxAmount(userRequest, loanQuery);
+    }
+
+    private boolean isMaxLoanAmountLessThan(BigDecimal queryAmount) {
+        return loanMaxAmount.compareTo(queryAmount) < 0;
+    }
+
+    private boolean isInRiskHourForMaxAmount(UserRequest userRequest, LoanQuery loanQuery) {
+        return maxLoanAmountEquals(loanQuery.getAmount()) && queryWasMadeInRiskHours(userRequest);
+    }
+
+    private boolean queryWasMadeInRiskHours(UserRequest userRequest) {
+        return userRequest.getRequestTimestamp().getHour() >= minRiskHour &&
+                userRequest.getRequestTimestamp().getHour() < maxRiskHour;
+    }
+
+    private boolean maxLoanAmountEquals(BigDecimal queryAmount) {
+        return loanMaxAmount.compareTo(queryAmount) == 0;
+    }
+
+    private boolean isThirdLoanRequest(UserRequest userRequest) {
+        return loanRepository.countLoansByClientIpAndStatus(userRequest.getIp(), LoanStatus.GRANTED) + 1 >= 3;
     }
 
     private Loan registerLoan(UserRequest userRequest, LoanQuery loanQuery) {
@@ -56,27 +81,5 @@ public class LoanServiceImpl implements LoanService {
 
     private LocalDate calculateEndingDate(UserRequest userRequest, LoanQuery loanQuery) {
         return userRequest.getRequestTimestamp().toLocalDate().plusMonths(loanQuery.getPeriodInMonths());
-    }
-
-
-    private boolean isQualifiedForRejection(UserRequest userRequest, LoanQuery loanQuery) {
-        return isMaxLoanAmountLessThan(loanQuery.getAmount()) || isInRiskHourForMaxAmount(userRequest, loanQuery);
-    }
-
-    private boolean isMaxLoanAmountLessThan(BigDecimal queryAmount) {
-        return loanMaxAmount.compareTo(queryAmount) < 0;
-    }
-
-    private boolean isInRiskHourForMaxAmount(UserRequest userRequest, LoanQuery loanQuery) {
-        return maxLoanAmountEquals(loanQuery.getAmount()) && queryWasMadeInRiskHours(userRequest);
-    }
-
-    private boolean maxLoanAmountEquals(BigDecimal queryAmount) {
-        return loanMaxAmount.compareTo(queryAmount) == 0;
-    }
-
-    private boolean queryWasMadeInRiskHours(UserRequest userRequest) {
-        return userRequest.getRequestTimestamp().getHour() >= minRiskHour &&
-                userRequest.getRequestTimestamp().getHour() < maxRiskHour;
     }
 }

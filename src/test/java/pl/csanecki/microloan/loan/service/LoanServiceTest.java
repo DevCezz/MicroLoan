@@ -21,14 +21,15 @@ import static org.mockito.ArgumentMatchers.any;
 
 import static org.mockito.Mockito.*;
 import static pl.csanecki.microloan.loan.service.LoanFixture.LoanBuilder;
+import static pl.csanecki.microloan.loan.service.LoanFixture.grantedLoan;
 
 @ExtendWith(SpringExtension.class)
 class LoanServiceTest {
     private static int MAX_LOAN_VALUE = 10000;
+    private static int PERIOD_IN_MONTHS = 36;
     private static int MAX_RISK_HOUR = 6;
     private static int MIN_RISK_HOUR = 0;
     private static String CLIENT_IP = "10.0.0.90";
-    private static long LOAN_ID = 34L;
 
     private LoanService loanService;
 
@@ -40,10 +41,13 @@ class LoanServiceTest {
     @BeforeEach
     void setUp() {
         loanService = new LoanServiceImpl(loanRepository);
-
         mockRequest = new MockHttpServletRequest();
-        mockRequest.addHeader("X-FORWARDED-FOR", CLIENT_IP);
 
+        mockRequest.addHeader("X-FORWARDED-FOR", CLIENT_IP);
+        setUpDefaultValuesForLoanService();
+    }
+
+    private void setUpDefaultValuesForLoanService() {
         ReflectionTestUtils.setField(loanService, "loanMaxAmount", BigDecimal.valueOf(MAX_LOAN_VALUE));
         ReflectionTestUtils.setField(loanService, "maxRiskHour", MAX_RISK_HOUR);
         ReflectionTestUtils.setField(loanService, "minRiskHour", MIN_RISK_HOUR);
@@ -52,17 +56,10 @@ class LoanServiceTest {
     @Test
     void shouldReturnPositiveDispositionForLoanMaxValue() {
         //given
-        BigDecimal queryLoanAmount = BigDecimal.valueOf(MAX_LOAN_VALUE);
-        LoanQuery mockLoanQuery = new LoanQuery(queryLoanAmount, 36);
+        LoanQuery mockLoanQuery = loanQueryForMaxValue();
+        UserRequest mockUserRequest = commonUserRequest();
+        Loan grantedLoan = grantedLoan();
 
-        LocalDateTime expectedTimestamp = LocalDateTime.of(2020, 1, 20, 13, 30);
-        UserRequest mockUserRequest = mock(UserRequest.class);
-        when(mockUserRequest.getRequestTimestamp()).thenReturn(expectedTimestamp);
-
-        Loan grantedLoan = LoanBuilder
-                .newLoan()
-                .withId(LOAN_ID)
-                .build();
         when(loanRepository.save(any())).thenReturn(grantedLoan);
 
         //when
@@ -74,18 +71,14 @@ class LoanServiceTest {
         assertEquals("Pożczyka została pomyślnie wydana", disposition.getMessage());
 
         PositiveDisposition positiveDisposition = (PositiveDisposition) disposition;
-        assertEquals(LOAN_ID, positiveDisposition.getLoanId());
+        assertEquals(grantedLoan.getId(), positiveDisposition.getLoanId());
     }
 
     @Test
     void shouldRejectLoanQueryBecauseOfTooBigAmount() {
         //given
-        BigDecimal queryLoanAmount = BigDecimal.valueOf(MAX_LOAN_VALUE + 100);
-        LoanQuery mockLoanQuery = new LoanQuery(queryLoanAmount, 36);
-
-        LocalDateTime expectedTimestamp = LocalDateTime.of(2020, 1, 20, 13, 30);
-        UserRequest mockUserRequest = mock(UserRequest.class);
-        when(mockUserRequest.getRequestTimestamp()).thenReturn(expectedTimestamp);
+        LoanQuery mockLoanQuery = loanQueryForExceedsValue();
+        UserRequest mockUserRequest = commonUserRequest();
 
         //when
         Disposition disposition = loanService.considerLoanRequest(mockUserRequest, mockLoanQuery);
@@ -99,12 +92,8 @@ class LoanServiceTest {
     @Test
     void shouldRejectLoanQueryBecauseWasSentBetweenMidnightAndSixAmForMaxAmount() {
         //given
-        BigDecimal queryLoanAmount = BigDecimal.valueOf(MAX_LOAN_VALUE);
-        LoanQuery mockLoanQuery = new LoanQuery(queryLoanAmount, 36);
-
-        LocalDateTime expectedTimestamp = LocalDateTime.of(2020, 1, 20, 2, 30);
-        UserRequest mockUserRequest = mock(UserRequest.class);
-        when(mockUserRequest.getRequestTimestamp()).thenReturn(expectedTimestamp);
+        LoanQuery mockLoanQuery = loanQueryForMaxValue();
+        UserRequest mockUserRequest = userRequestAtRiskHours();
 
         //when
         Disposition disposition = loanService.considerLoanRequest(mockUserRequest, mockLoanQuery);
@@ -118,17 +107,10 @@ class LoanServiceTest {
     @Test
     void shouldSaveLoanForProperLoanQuery() {
         //given
-        BigDecimal queryLoanAmount = BigDecimal.valueOf(MAX_LOAN_VALUE);
-        LoanQuery mockLoanQuery = new LoanQuery(queryLoanAmount, 36);
+        LoanQuery mockLoanQuery = loanQueryForMaxValue();
+        UserRequest mockUserRequest = commonUserRequest();
+        Loan grantedLoan = grantedLoan();
 
-        LocalDateTime expectedTimestamp = LocalDateTime.of(2020, 1, 20, 13, 32);
-        UserRequest mockUserRequest = mock(UserRequest.class);
-        when(mockUserRequest.getRequestTimestamp()).thenReturn(expectedTimestamp);
-
-        Loan grantedLoan = LoanBuilder
-                .newLoan()
-                .withId(LOAN_ID)
-                .build();
         when(loanRepository.save(any())).thenReturn(grantedLoan);
 
         //when
@@ -141,20 +123,11 @@ class LoanServiceTest {
     @Test
     void shouldRejectLoanQueryWhenThisIsThirdQueryFromTheSameIp() {
         //given
-        BigDecimal queryLoanAmount = BigDecimal.valueOf(MAX_LOAN_VALUE);
-        LoanQuery mockLoanQuery = new LoanQuery(queryLoanAmount, 36);
+        LoanQuery mockLoanQuery = loanQueryForMaxValue();
+        UserRequest mockUserRequest = commonUserRequest();
+        Loan grantedLoan = grantedLoan();
 
-        LocalDateTime expectedTimestamp = LocalDateTime.of(2020, 1, 20, 13, 32);
-        UserRequest mockUserRequest = mock(UserRequest.class);
-        when(mockUserRequest.getRequestTimestamp()).thenReturn(expectedTimestamp);
-        when(mockUserRequest.getIp()).thenReturn(CLIENT_IP);
-
-        Loan grantedLoan = LoanBuilder
-                .newLoan()
-                .withId(LOAN_ID)
-                .build();
         when(loanRepository.save(any())).thenReturn(grantedLoan);
-
         when(loanRepository.countLoansByClientIpAndStatus(CLIENT_IP, LoanStatus.GRANTED)).thenReturn(2);
 
         //when
@@ -164,5 +137,34 @@ class LoanServiceTest {
         assertTrue(disposition instanceof NegativeDisposition);
         assertEquals(LoanStatus.REJECTED, disposition.getLoanStatus());
         assertEquals("Nie można wydać trzeciej pożyczki", disposition.getMessage());
+    }
+
+    private LoanQuery loanQueryForMaxValue() {
+        BigDecimal queryLoanAmount = BigDecimal.valueOf(MAX_LOAN_VALUE);
+        return new LoanQuery(queryLoanAmount, PERIOD_IN_MONTHS);
+    }
+
+    private LoanQuery loanQueryForExceedsValue() {
+        BigDecimal queryLoanAmount = BigDecimal.valueOf(MAX_LOAN_VALUE + 100);
+        return new LoanQuery(queryLoanAmount, PERIOD_IN_MONTHS);
+    }
+
+    private UserRequest commonUserRequest() {
+        UserRequest userRequest = mock(UserRequest.class);
+        LocalDateTime expectedTimestamp = LocalDateTime.of(2020, 1, 20, 13, 30);
+
+        when(userRequest.getRequestTimestamp()).thenReturn(expectedTimestamp);
+        when(userRequest.getIp()).thenReturn(CLIENT_IP);
+
+        return userRequest;
+    }
+
+    private UserRequest userRequestAtRiskHours() {
+        UserRequest userRequest = mock(UserRequest.class);
+        LocalDateTime expectedTimestamp = LocalDateTime.of(2020, 1, 20, MIN_RISK_HOUR + 1, 32);
+
+        when(userRequest.getRequestTimestamp()).thenReturn(expectedTimestamp);
+
+        return userRequest;
     }
 }

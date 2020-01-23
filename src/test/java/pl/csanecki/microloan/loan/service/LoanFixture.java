@@ -6,6 +6,15 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 class LoanFixture {
+    private static long GRANTED_LOAN_ID = 34L;
+
+    static Loan grantedLoan() {
+        return LoanBuilder
+                .newLoan()
+                .withId(GRANTED_LOAN_ID)
+                .build();
+    }
+
     static class LoanBuilder {
         private Long id;
         private String clientIp;
