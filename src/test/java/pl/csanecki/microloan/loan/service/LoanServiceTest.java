@@ -18,9 +18,7 @@ import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-
 import static org.mockito.Mockito.*;
-import static pl.csanecki.microloan.loan.service.LoanFixture.LoanBuilder;
 import static pl.csanecki.microloan.loan.service.LoanFixture.grantedLoan;
 
 @ExtendWith(SpringExtension.class)
