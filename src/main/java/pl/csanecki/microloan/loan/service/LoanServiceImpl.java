@@ -12,6 +12,7 @@ import pl.csanecki.microloan.loan.model.PositiveDisposition;
 import pl.csanecki.microloan.loan.repository.LoanRepository;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Service
 public class LoanServiceImpl implements LoanService {
@@ -34,22 +35,39 @@ public class LoanServiceImpl implements LoanService {
 
     @Override
     public Disposition considerLoanRequest(UserRequest userRequest, LoanQuery loanQuery) {
-        if(maxLoanAmountIsLessThan(loanQuery.getAmount())) {
+        if(isQualifiedForRejection(userRequest, loanQuery)) {
             return new NegativeDisposition();
         }
 
-        if(maxLoanAmountEquals(loanQuery.getAmount()) && queryWasMadeInRiskHours(userRequest)) {
-            return new NegativeDisposition();
-        }
-
-        loanRepository.save(new Loan(userRequest.getIp(), userRequest.getRequestTimestamp().toLocalDate(),
-                userRequest.getRequestTimestamp().toLocalDate().plusMonths(loanQuery.getPeriodInMonths()),
-                loanQuery.getAmount()));
+        Loan loan = registerLoan(userRequest, loanQuery);
         return new PositiveDisposition();
     }
 
-    private boolean maxLoanAmountIsLessThan(BigDecimal queryAmount) {
+    private Loan registerLoan(UserRequest userRequest, LoanQuery loanQuery) {
+        Loan loan = new Loan();
+        loan.setClientIp(userRequest.getIp());
+        loan.setAmount(loan.getAmount());
+        loan.setStartingDate(userRequest.getRequestTimestamp().toLocalDate());
+        loan.setEndingDate(calculateEndingDate(userRequest, loanQuery));
+
+        return loanRepository.save(loan);
+    }
+
+    private LocalDate calculateEndingDate(UserRequest userRequest, LoanQuery loanQuery) {
+        return userRequest.getRequestTimestamp().toLocalDate().plusMonths(loanQuery.getPeriodInMonths());
+    }
+
+
+    private boolean isQualifiedForRejection(UserRequest userRequest, LoanQuery loanQuery) {
+        return isMaxLoanAmountLessThan(loanQuery.getAmount()) || isInRiskHourForMaxAmount(userRequest, loanQuery);
+    }
+
+    private boolean isMaxLoanAmountLessThan(BigDecimal queryAmount) {
         return loanMaxAmount.compareTo(queryAmount) < 0;
+    }
+
+    private boolean isInRiskHourForMaxAmount(UserRequest userRequest, LoanQuery loanQuery) {
+        return maxLoanAmountEquals(loanQuery.getAmount()) && queryWasMadeInRiskHours(userRequest);
     }
 
     private boolean maxLoanAmountEquals(BigDecimal queryAmount) {
