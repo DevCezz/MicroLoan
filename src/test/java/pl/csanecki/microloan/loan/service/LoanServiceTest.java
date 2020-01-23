@@ -7,7 +7,6 @@ import org.mockito.Mock;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import pl.csanecki.microloan.loan.dto.LoanPostponementQuery;
 import pl.csanecki.microloan.loan.dto.LoanQuery;
 import pl.csanecki.microloan.loan.dto.UserRequest;
 import pl.csanecki.microloan.loan.model.*;
@@ -146,12 +145,12 @@ class LoanServiceTest {
         //given
         LocalDate date = LocalDate.of(2020, 3, 20);
         Loan grantedLoan = grantedLoanWithEndingDateAndClientIp(date, CLIENT_IP);
-        LoanPostponementQuery loanPostponementQuery = new LoanPostponementQuery(CLIENT_IP, grantedLoan.getId());
+        UserRequest mockUserRequest = commonUserRequest();
 
         when(loanRepository.findById(grantedLoan.getId())).thenReturn(Optional.of(grantedLoan));
 
         //when
-        PostponementDecision postponementDecision = loanService.postponeLoan(loanPostponementQuery);
+        PostponementDecision postponementDecision = loanService.postponeLoan(mockUserRequest, grantedLoan.getId());
 
         //then
         assertTrue(postponementDecision instanceof PositivePostponement);
@@ -164,28 +163,28 @@ class LoanServiceTest {
         //given
         LocalDate date = LocalDate.of(2020, 3, 20);
         Loan grantedLoan = grantedLoanWithEndingDateAndClientIp(date, CLIENT_IP);
-        LoanPostponementQuery loanPostponementQuery = new LoanPostponementQuery(CLIENT_IP, grantedLoan.getId());
+        UserRequest mockUserRequest = commonUserRequest();
 
         when(loanRepository.findById(grantedLoan.getId())).thenReturn(Optional.empty());
 
         //when
-        PostponementDecision postponementDecision = loanService.postponeLoan(loanPostponementQuery);
+        PostponementDecision postponementDecision = loanService.postponeLoan(mockUserRequest, grantedLoan.getId());
 
         //then
         assertTrue(postponementDecision instanceof NegativePostponement);
-        assertEquals("Nie można odroczyć pożyczki o id " + loanPostponementQuery.getLoanId(), postponementDecision.getMessage());
+        assertEquals("Nie można odroczyć pożyczki o id " + grantedLoan.getId(), postponementDecision.getMessage());
     }
 
     @Test
     void shouldNotPostponeLoanWhichOnceHasBeenPostponed() {
         //given
         Loan postponedLoan = postponedLoanWithClientIp(CLIENT_IP);
-        LoanPostponementQuery loanPostponementQuery = new LoanPostponementQuery(CLIENT_IP, postponedLoan.getId());
+        UserRequest mockUserRequest = commonUserRequest();
 
         when(loanRepository.findById(postponedLoan.getId())).thenReturn(Optional.of(postponedLoan));
 
         //when
-        PostponementDecision postponementDecision = loanService.postponeLoan(loanPostponementQuery);
+        PostponementDecision postponementDecision = loanService.postponeLoan(mockUserRequest, postponedLoan.getId());
 
         //then
         assertTrue(postponementDecision instanceof NegativePostponement);
@@ -196,16 +195,16 @@ class LoanServiceTest {
     void shouldNotPostponeLoanWhenPostponementIsNotMadeByOwner() {
         //given
         Loan grantedLoan = grantedLoanWithClientIp(CLIENT_IP);
-        LoanPostponementQuery loanPostponementQuery = new LoanPostponementQuery(DIFFRENT_CLIENT_IP, grantedLoan.getId());
+        UserRequest mockUserRequest = commonUserRequestWithDifferentIp();
 
         when(loanRepository.findById(grantedLoan.getId())).thenReturn(Optional.of(grantedLoan));
 
         //when
-        PostponementDecision postponementDecision = loanService.postponeLoan(loanPostponementQuery);
+        PostponementDecision postponementDecision = loanService.postponeLoan(mockUserRequest, grantedLoan.getId());
 
         //then
         assertTrue(postponementDecision instanceof NegativePostponement);
-        assertEquals("Nie można odroczyć pożyczki o id " + loanPostponementQuery.getLoanId(), postponementDecision.getMessage());
+        assertEquals("Nie można odroczyć pożyczki o id " + grantedLoan.getId(), postponementDecision.getMessage());
     }
 
     private LoanQuery loanQueryForMaxValue() {
@@ -224,6 +223,16 @@ class LoanServiceTest {
 
         when(userRequest.getRequestTimestamp()).thenReturn(expectedTimestamp);
         when(userRequest.getIp()).thenReturn(CLIENT_IP);
+
+        return userRequest;
+    }
+
+    private UserRequest commonUserRequestWithDifferentIp() {
+        UserRequest userRequest = mock(UserRequest.class);
+        LocalDateTime expectedTimestamp = LocalDateTime.of(2020, 1, 20, 13, 30);
+
+        when(userRequest.getRequestTimestamp()).thenReturn(expectedTimestamp);
+        when(userRequest.getIp()).thenReturn(DIFFRENT_CLIENT_IP);
 
         return userRequest;
     }

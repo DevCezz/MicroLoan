@@ -3,7 +3,6 @@ package pl.csanecki.microloan.loan.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import pl.csanecki.microloan.loan.dto.LoanPostponementQuery;
 import pl.csanecki.microloan.loan.dto.LoanQuery;
 import pl.csanecki.microloan.loan.dto.UserRequest;
 import pl.csanecki.microloan.loan.model.*;
@@ -36,14 +35,14 @@ public class LoanServiceImpl implements LoanService {
     }
 
     @Override
-    public PostponementDecision postponeLoan(LoanPostponementQuery loanPostponementQuery) {
-        Optional<Loan> loanEntity = loanRepository.findById(loanPostponementQuery.getLoanId());
+    public PostponementDecision postponeLoan(UserRequest userRequest, Long loanId) {
+        Optional<Loan> loanEntity = loanRepository.findById(loanId);
 
         if(loanEntity.isPresent()) {
             Loan foundedLoan = loanEntity.get();
 
-            if(!foundedLoan.getClientIp().equals(loanPostponementQuery.getClientId())) {
-                return new NegativePostponement("Nie można odroczyć pożyczki o id " + loanPostponementQuery.getLoanId());
+            if(!foundedLoan.getClientIp().equals(userRequest.getIp())) {
+                return new NegativePostponement("Nie można odroczyć pożyczki o id " + loanId);
             }
 
             if(foundedLoan.getStatus().equals(LoanStatus.POSTPONED)) {
@@ -53,7 +52,7 @@ public class LoanServiceImpl implements LoanService {
             return executePostponement(foundedLoan);
         }
 
-        return new NegativePostponement("Nie można odroczyć pożyczki o id " + loanPostponementQuery.getLoanId());
+        return new NegativePostponement("Nie można odroczyć pożyczki o id " + loanId);
     }
 
     private PostponementDecision executePostponement(Loan loan) {

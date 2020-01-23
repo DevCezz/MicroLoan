@@ -1,20 +1,17 @@
 package pl.csanecki.microloan.loan;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.util.UriComponents;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import pl.csanecki.microloan.loan.dto.LoanQuery;
 import pl.csanecki.microloan.loan.dto.UserRequest;
 import pl.csanecki.microloan.loan.model.Disposition;
 import pl.csanecki.microloan.loan.model.PositiveDisposition;
+import pl.csanecki.microloan.loan.model.PositivePostponement;
+import pl.csanecki.microloan.loan.model.PostponementDecision;
 import pl.csanecki.microloan.loan.service.LoanService;
 
 import javax.servlet.http.HttpServletRequest;
@@ -28,6 +25,30 @@ public class LoanController {
     @Autowired
     public LoanController(LoanService loanService) {
         this.loanService = loanService;
+    }
+
+    @PostMapping(
+            value = "/loan/postpone/{id}",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    ResponseEntity<PostponementDecision> queryForPostponeLoan(@PathVariable Long loanId, HttpServletRequest request) {
+        UserRequest userRequest = UserRequest.extractFrom(request);
+        PostponementDecision postponementDecision = loanService.postponeLoan(userRequest, loanId);
+
+        if(isPositivePostponement(postponementDecision)) {
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(postponementDecision);
+        } else {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_ACCEPTABLE)
+                    .body(postponementDecision);
+        }
+    }
+
+    private boolean isPositivePostponement(PostponementDecision postponementDecision) {
+        return postponementDecision instanceof PositivePostponement;
     }
 
     @PostMapping(
