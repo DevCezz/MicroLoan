@@ -1,6 +1,7 @@
 package pl.csanecki.microloan.loan.service;
 
 import pl.csanecki.microloan.loan.model.Loan;
+import pl.csanecki.microloan.loan.model.LoanStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -8,10 +9,27 @@ import java.time.LocalDate;
 class LoanFixture {
     private static long GRANTED_LOAN_ID = 34L;
 
-    static Loan grantedLoan() {
+    static Loan grantedLoanOnlyWithId() {
         return LoanBuilder
                 .newLoan()
                 .withId(GRANTED_LOAN_ID)
+                .build();
+    }
+
+    static Loan grantedLoanWithEndingDate(LocalDate endingDate) {
+        return LoanBuilder
+                .newLoan()
+                .withId(GRANTED_LOAN_ID)
+                .withStatus(LoanStatus.GRANTED)
+                .withEndingDate(endingDate)
+                .build();
+    }
+
+    static Loan postponedLoan() {
+        return LoanBuilder
+                .newLoan()
+                .withId(GRANTED_LOAN_ID)
+                .withStatus(LoanStatus.POSTPONED)
                 .build();
     }
 
@@ -21,6 +39,7 @@ class LoanFixture {
         private LocalDate startingDate;
         private LocalDate endingDate;
         private BigDecimal amount;
+        private LoanStatus status;
 
         static LoanBuilder newLoan() {
             return new LoanBuilder();
@@ -51,6 +70,11 @@ class LoanFixture {
             return this;
         }
 
+        LoanBuilder withStatus(LoanStatus status) {
+            this.status = status;
+            return this;
+        }
+
         Loan build() {
             Loan loan = new Loan();
             loan.setId(id);
@@ -58,6 +82,7 @@ class LoanFixture {
             loan.setStartingDate(startingDate);
             loan.setEndingDate(endingDate);
             loan.setAmount(amount);
+            loan.setStatus(status);
 
             return loan;
         }

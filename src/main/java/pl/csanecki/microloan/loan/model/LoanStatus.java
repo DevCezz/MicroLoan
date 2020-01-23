@@ -2,7 +2,8 @@ package pl.csanecki.microloan.loan.model;
 
 public enum LoanStatus {
     REJECTED("odrzucona"),
-    GRANTED("przyznana");
+    GRANTED("przyznana"),
+    POSTPONED("odroczona");
 
     private String value;
 
