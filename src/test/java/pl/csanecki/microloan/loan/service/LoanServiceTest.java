@@ -156,6 +156,7 @@ class LoanServiceTest {
         assertTrue(postponementDecision instanceof PositivePostponement);
         assertEquals(LoanStatus.POSTPONED, ((PositivePostponement) postponementDecision).getLoanStatus());
         assertEquals("Pożyczka została przesunięta o " + POSTPONE_DAYS + " dni", postponementDecision.getMessage());
+        assertEquals(date.plusDays(POSTPONE_DAYS), ((PositivePostponement) postponementDecision).getEndingDate());
     }
 
     @Test

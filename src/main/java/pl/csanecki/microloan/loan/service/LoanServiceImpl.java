@@ -61,7 +61,8 @@ public class LoanServiceImpl implements LoanService {
 
         loanRepository.save(loan);
 
-        return new PositivePostponement("Pożyczka została przesunięta o " + postponeDays + " dni", loan.getStatus());
+        return new PositivePostponement("Pożyczka została przesunięta o " + postponeDays + " dni",
+                loan.getStatus(), loan.getEndingDate());
     }
 
     @Override

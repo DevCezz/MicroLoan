@@ -28,14 +28,17 @@ public class LoanController {
     }
 
     @PostMapping(
-            value = "/loan/postpone/{id}",
-            consumes = MediaType.APPLICATION_JSON_VALUE,
+            value = "/loan/postpone/{loanId}",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     ResponseEntity<PostponementDecision> queryForPostponeLoan(@PathVariable Long loanId, HttpServletRequest request) {
         UserRequest userRequest = UserRequest.extractFrom(request);
         PostponementDecision postponementDecision = loanService.postponeLoan(userRequest, loanId);
 
+        return responseConsidering(postponementDecision);
+    }
+
+    private ResponseEntity<PostponementDecision> responseConsidering(PostponementDecision postponementDecision) {
         if(isPositivePostponement(postponementDecision)) {
             return ResponseEntity
                     .status(HttpStatus.OK)
