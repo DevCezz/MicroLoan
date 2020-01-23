@@ -1,6 +1,7 @@
 package pl.csanecki.microloan.loan.model;
 
 import javax.persistence.Entity;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import java.math.BigDecimal;
@@ -13,15 +14,9 @@ public class Loan {
     private LocalDate startingDate;
     private LocalDate endingDate;
     private BigDecimal amount;
+    private @Enumerated LoanStatus status;
 
     public Loan() {}
-
-    public Loan(String clientIp, LocalDate startingDate, LocalDate endingDate, BigDecimal amount) {
-        this.clientIp = clientIp;
-        this.startingDate = startingDate;
-        this.endingDate = endingDate;
-        this.amount = amount;
-    }
 
     public Long getId() {
         return id;
@@ -61,5 +56,13 @@ public class Loan {
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
+    }
+
+    public LoanStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(LoanStatus status) {
+        this.status = status;
     }
 }

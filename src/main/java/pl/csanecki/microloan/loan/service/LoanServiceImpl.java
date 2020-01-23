@@ -5,10 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import pl.csanecki.microloan.loan.dto.LoanQuery;
 import pl.csanecki.microloan.loan.dto.UserRequest;
-import pl.csanecki.microloan.loan.model.Disposition;
-import pl.csanecki.microloan.loan.model.Loan;
-import pl.csanecki.microloan.loan.model.NegativeDisposition;
-import pl.csanecki.microloan.loan.model.PositiveDisposition;
+import pl.csanecki.microloan.loan.model.*;
 import pl.csanecki.microloan.loan.repository.LoanRepository;
 
 import java.math.BigDecimal;
@@ -36,11 +33,15 @@ public class LoanServiceImpl implements LoanService {
     @Override
     public Disposition considerLoanRequest(UserRequest userRequest, LoanQuery loanQuery) {
         if(isQualifiedForRejection(userRequest, loanQuery)) {
-            return new NegativeDisposition();
+            return new NegativeDisposition("Nie spełniono kryteriów do wydania pożyczki", LoanStatus.REJECTED);
+        }
+
+        if(loanRepository.countLoansByClientIpAndStatus(userRequest.getIp(), LoanStatus.GRANTED) + 1 >= 3) {
+            return new NegativeDisposition("Nie można wydać trzeciej pożyczki", LoanStatus.REJECTED);
         }
 
         Loan loan = registerLoan(userRequest, loanQuery);
-        return new PositiveDisposition();
+        return new PositiveDisposition("Pożczyka została pomyślnie wydana", LoanStatus.GRANTED, loan.getId());
     }
 
     private Loan registerLoan(UserRequest userRequest, LoanQuery loanQuery) {
