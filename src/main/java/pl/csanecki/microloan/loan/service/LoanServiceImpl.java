@@ -39,20 +39,30 @@ public class LoanServiceImpl implements LoanService {
         Optional<Loan> loanEntity = loanRepository.findById(loanId);
 
         if(loanEntity.isPresent()) {
-            Loan foundedLoan = loanEntity.get();
-
-            if(!foundedLoan.getClientIp().equals(userRequest.getIp())) {
-                return new NegativePostponement("Nie można odroczyć pożyczki o id " + loanId);
-            }
-
-            if(foundedLoan.getStatus().equals(LoanStatus.POSTPONED)) {
-                return new NegativePostponement("Nie można odroczyć już odroczonej pożyczki");
-            }
-
-            return executePostponement(foundedLoan);
+            return handlePostponeRequest(userRequest, loanEntity.get());
         }
 
         return new NegativePostponement("Nie można odroczyć pożyczki o id " + loanId);
+    }
+
+    private PostponementDecision handlePostponeRequest(UserRequest userRequest, Loan loan) {
+        if(clientIsNotLoanOwner(userRequest, loan)) {
+            return new NegativePostponement("Nie można odroczyć pożyczki o id " + loan.getId());
+        }
+
+        if(loanHasBeenPostponed(loan)) {
+            return new NegativePostponement("Nie można odroczyć już odroczonej pożyczki");
+        }
+
+        return executePostponement(loan);
+    }
+
+    private boolean clientIsNotLoanOwner(UserRequest userRequest, Loan foundedLoan) {
+        return !foundedLoan.getClientIp().equals(userRequest.getIp());
+    }
+
+    private boolean loanHasBeenPostponed(Loan foundedLoan) {
+        return foundedLoan.getStatus().equals(LoanStatus.POSTPONED);
     }
 
     private PostponementDecision executePostponement(Loan loan) {
@@ -76,6 +86,7 @@ public class LoanServiceImpl implements LoanService {
         }
 
         Loan loan = registerLoan(userRequest, loanQuery);
+
         return new PositiveDisposition("Pożyczka została pomyślnie wydana", LoanStatus.GRANTED, loan.getId());
     }
 
@@ -91,13 +102,13 @@ public class LoanServiceImpl implements LoanService {
         return maxLoanAmountEquals(loanQuery.getAmount()) && queryWasMadeInRiskHours(userRequest);
     }
 
+    private boolean maxLoanAmountEquals(BigDecimal queryAmount) {
+        return loanMaxAmount.compareTo(queryAmount) == 0;
+    }
+
     private boolean queryWasMadeInRiskHours(UserRequest userRequest) {
         return userRequest.getRequestTimestamp().getHour() >= minRiskHour &&
                 userRequest.getRequestTimestamp().getHour() < maxRiskHour;
-    }
-
-    private boolean maxLoanAmountEquals(BigDecimal queryAmount) {
-        return loanMaxAmount.compareTo(queryAmount) == 0;
     }
 
     private boolean isThirdLoanRequest(UserRequest userRequest) {

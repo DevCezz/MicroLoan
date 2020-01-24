@@ -78,14 +78,14 @@ public class LoanController {
         }
     }
 
+    private boolean isPositiveDisposition(Disposition disposition) {
+        return disposition instanceof PositiveDisposition;
+    }
+
     private URI resolveLocationUri(PositiveDisposition disposition) {
         return UriComponentsBuilder
                 .fromUriString("/loan/postpone/{id}")
                 .buildAndExpand(disposition.getLoanId())
                 .toUri();
-    }
-
-    private boolean isPositiveDisposition(Disposition disposition) {
-        return disposition instanceof PositiveDisposition;
     }
 }
