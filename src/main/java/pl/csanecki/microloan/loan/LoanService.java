@@ -1,4 +1,4 @@
-package pl.csanecki.microloan.loan.service;
+package pl.csanecki.microloan.loan;
 
 import pl.csanecki.microloan.loan.dto.LoanQuery;
 import pl.csanecki.microloan.loan.dto.UserRequest;

@@ -12,7 +12,6 @@ import pl.csanecki.microloan.loan.model.Disposition;
 import pl.csanecki.microloan.loan.model.PositiveDisposition;
 import pl.csanecki.microloan.loan.model.PositivePostponement;
 import pl.csanecki.microloan.loan.model.PostponementDecision;
-import pl.csanecki.microloan.loan.service.LoanService;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
