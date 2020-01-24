@@ -10,6 +10,8 @@ import pl.csanecki.microloan.loan.repository.LoanRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -94,11 +96,20 @@ public class LoanServiceImpl implements LoanService {
     }
 
     private boolean isQualifiedForRejection(UserRequest userRequest, LoanQuery loanQuery) {
-        return isMaxLoanAmountLessThan(loanQuery.getAmount()) || isInRiskHourForMaxAmount(userRequest, loanQuery);
+        return isNotProperAmount(loanQuery.getAmount()) || isInRiskHourForMaxAmount(userRequest, loanQuery) ||
+                isNegativePeriodsInMonths(loanQuery.getPeriodInMonths());
+    }
+
+    private boolean isNotProperAmount(BigDecimal queryAmount) {
+        return isMaxLoanAmountLessThan(queryAmount) || isNegativeAmount(queryAmount);
     }
 
     private boolean isMaxLoanAmountLessThan(BigDecimal queryAmount) {
         return loanMaxAmount.compareTo(queryAmount) < 0;
+    }
+
+    private boolean isNegativeAmount(BigDecimal queryAmount) {
+        return !queryAmount.equals(queryAmount.abs());
     }
 
     private boolean isInRiskHourForMaxAmount(UserRequest userRequest, LoanQuery loanQuery) {
@@ -114,8 +125,13 @@ public class LoanServiceImpl implements LoanService {
                 userRequest.getRequestTimestamp().getHour() < maxRiskHour;
     }
 
+    private boolean isNegativePeriodsInMonths(int periodInMonths) {
+        return periodInMonths < 0;
+    }
+
     private boolean isNumberOfLoanRequestExceeded(UserRequest userRequest) {
-        return loanRepository.countLoansByClientIpAndStatusNot(userRequest.getIp(), LoanStatus.REJECTED) >= allowedNumberOfLoans;
+        List<LoanStatus> countedStatuses = Arrays.asList(LoanStatus.GRANTED, LoanStatus.POSTPONED);
+        return loanRepository.countLoansByClientIpAndStatusIsIn(userRequest.getIp(), countedStatuses) >= allowedNumberOfLoans;
     }
 
     private Loan registerLoan(UserRequest userRequest, LoanQuery loanQuery) {

@@ -17,6 +17,8 @@ import pl.csanecki.microloan.loan.repository.LoanRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Stream;
@@ -94,6 +96,36 @@ class LoanServiceTest {
         assertEquals("Nie spełniono kryteriów do wydania pożyczki", disposition.getMessage());
     }
 
+    @Test
+    void shouldRejectLoanQueryBecauseOfNegativeAmount() {
+        //given
+        LoanQuery mockLoanQuery = loanQueryForNegativeValue();
+        UserRequest mockUserRequest = commonUserRequest();
+
+        //when
+        Disposition disposition = loanService.considerLoanRequest(mockUserRequest, mockLoanQuery);
+
+        //then
+        assertTrue(disposition instanceof NegativeDisposition);
+        assertEquals(LoanStatus.REJECTED, disposition.getLoanStatus());
+        assertEquals("Nie spełniono kryteriów do wydania pożyczki", disposition.getMessage());
+    }
+
+    @Test
+    void shouldRejectLoanQueryBecauseOfNegativePeriodsInMonths() {
+        //given
+        LoanQuery mockLoanQuery = loanQueryForNegativePeriodsInMonths();
+        UserRequest mockUserRequest = commonUserRequest();
+
+        //when
+        Disposition disposition = loanService.considerLoanRequest(mockUserRequest, mockLoanQuery);
+
+        //then
+        assertTrue(disposition instanceof NegativeDisposition);
+        assertEquals(LoanStatus.REJECTED, disposition.getLoanStatus());
+        assertEquals("Nie spełniono kryteriów do wydania pożyczki", disposition.getMessage());
+    }
+
     @ParameterizedTest
     @MethodSource("dateTimestampParams")
     void shouldRejectLoanQueryBecauseWasSentBetweenMidnightAndSixAmForMaxAmount(int hour, int minutes) {
@@ -148,12 +180,13 @@ class LoanServiceTest {
     }
 
     @Test
-    void shouldRejectLoanQueryWhenThisIsThirdQueryFromTheSameIpAndFirstLoanHasStatusGrantedAndSecondPostponed() {
+    void shouldRejectLoanQueryWhenThisIsThirdQueryFromTheSameIpAndLoansAreGrantedOrPostponed() {
         //given
         LoanQuery mockLoanQuery = loanQueryForMaxValue();
         UserRequest mockUserRequest = commonUserRequest();
 
-        when(loanRepository.countLoansByClientIpAndStatusNot(CLIENT_IP, LoanStatus.REJECTED)).thenReturn(MAX_LOAN_VALUE);
+        List<LoanStatus> countedStatues = Arrays.asList(LoanStatus.GRANTED, LoanStatus.POSTPONED);
+        when(loanRepository.countLoansByClientIpAndStatusIsIn(CLIENT_IP, countedStatues)).thenReturn(MAX_LOAN_VALUE);
 
         //when
         Disposition disposition = loanService.considerLoanRequest(mockUserRequest, mockLoanQuery);
@@ -240,6 +273,16 @@ class LoanServiceTest {
     private LoanQuery loanQueryForExceedsValue() {
         BigDecimal queryLoanAmount = BigDecimal.valueOf(MAX_LOAN_VALUE + 100);
         return new LoanQuery(queryLoanAmount, PERIOD_IN_MONTHS);
+    }
+
+    private LoanQuery loanQueryForNegativeValue() {
+        BigDecimal queryLoanAmount = BigDecimal.valueOf(-100);
+        return new LoanQuery(queryLoanAmount, PERIOD_IN_MONTHS);
+    }
+
+    private LoanQuery loanQueryForNegativePeriodsInMonths() {
+        BigDecimal queryLoanAmount = BigDecimal.valueOf(MAX_LOAN_VALUE);
+        return new LoanQuery(queryLoanAmount, -12);
     }
 
     private UserRequest commonUserRequest() {
