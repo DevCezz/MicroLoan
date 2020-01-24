@@ -30,7 +30,8 @@ import static pl.csanecki.microloan.loan.service.LoanFixture.*;
 
 @ExtendWith(SpringExtension.class)
 class LoanServiceTest {
-    public static final int POSTPONE_DAYS = 14;
+    private static final int POSTPONE_DAYS = 14;
+    private static int ALLOWED_NUMBER_OF_LOANS = 2;
     private static int MAX_LOAN_VALUE = 10000;
     private static int PERIOD_IN_MONTHS = 36;
     private static int MAX_RISK_HOUR = 6;
@@ -50,6 +51,7 @@ class LoanServiceTest {
     }
 
     private void setUpDefaultValuesForLoanService() {
+        ReflectionTestUtils.setField(loanService, "allowedNumberOfLoans", ALLOWED_NUMBER_OF_LOANS);
         ReflectionTestUtils.setField(loanService, "loanMaxAmount", BigDecimal.valueOf(MAX_LOAN_VALUE));
         ReflectionTestUtils.setField(loanService, "maxRiskHour", MAX_RISK_HOUR);
         ReflectionTestUtils.setField(loanService, "minRiskHour", MIN_RISK_HOUR);
@@ -151,7 +153,7 @@ class LoanServiceTest {
         LoanQuery mockLoanQuery = loanQueryForMaxValue();
         UserRequest mockUserRequest = commonUserRequest();
 
-        when(loanRepository.countLoansByClientIpAndStatus(CLIENT_IP, LoanStatus.GRANTED)).thenReturn(2);
+        when(loanRepository.countLoansByClientIpAndStatus(CLIENT_IP, LoanStatus.GRANTED)).thenReturn(MAX_LOAN_VALUE);
 
         //when
         Disposition disposition = loanService.considerLoanRequest(mockUserRequest, mockLoanQuery);

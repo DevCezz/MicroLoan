@@ -15,6 +15,9 @@ import java.util.Optional;
 @Service
 public class LoanServiceImpl implements LoanService {
 
+    @Value("${loan.allowed-amount}")
+    public int allowedNumberOfLoans;
+
     @Value("${loan.max-amount}")
     private BigDecimal loanMaxAmount;
 
@@ -81,7 +84,7 @@ public class LoanServiceImpl implements LoanService {
             return new NegativeDisposition("Nie spełniono kryteriów do wydania pożyczki", LoanStatus.REJECTED);
         }
 
-        if(isThirdLoanRequest(userRequest)) {
+        if(isNumberOfLoanRequestExceeds(userRequest)) {
             return new NegativeDisposition("Nie można wydać trzeciej pożyczki", LoanStatus.REJECTED);
         }
 
@@ -111,8 +114,8 @@ public class LoanServiceImpl implements LoanService {
                 userRequest.getRequestTimestamp().getHour() < maxRiskHour;
     }
 
-    private boolean isThirdLoanRequest(UserRequest userRequest) {
-        return loanRepository.countLoansByClientIpAndStatus(userRequest.getIp(), LoanStatus.GRANTED) + 1 >= 3;
+    private boolean isNumberOfLoanRequestExceeds(UserRequest userRequest) {
+        return loanRepository.countLoansByClientIpAndStatus(userRequest.getIp(), LoanStatus.GRANTED) >= allowedNumberOfLoans;
     }
 
     private Loan registerLoan(UserRequest userRequest, LoanQuery loanQuery) {
