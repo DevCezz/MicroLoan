@@ -12,7 +12,14 @@ import org.springframework.test.util.ReflectionTestUtils;
 import pl.csanecki.microloan.loan.LoanService;
 import pl.csanecki.microloan.loan.dto.LoanQuery;
 import pl.csanecki.microloan.loan.dto.UserRequest;
-import pl.csanecki.microloan.loan.model.*;
+import pl.csanecki.microloan.loan.model.db.Loan;
+import pl.csanecki.microloan.loan.model.db.LoanStatus;
+import pl.csanecki.microloan.loan.model.disposition.Disposition;
+import pl.csanecki.microloan.loan.model.disposition.NegativeDisposition;
+import pl.csanecki.microloan.loan.model.disposition.PositiveDisposition;
+import pl.csanecki.microloan.loan.model.postponement.NegativePostponement;
+import pl.csanecki.microloan.loan.model.postponement.PositivePostponement;
+import pl.csanecki.microloan.loan.model.postponement.PostponementDecision;
 import pl.csanecki.microloan.loan.repository.LoanRepository;
 
 import java.math.BigDecimal;

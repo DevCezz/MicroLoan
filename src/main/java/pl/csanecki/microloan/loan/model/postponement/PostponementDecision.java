@@ -1,4 +1,4 @@
-package pl.csanecki.microloan.loan.model;
+package pl.csanecki.microloan.loan.model.postponement;
 
 public abstract class PostponementDecision {
     private String message;

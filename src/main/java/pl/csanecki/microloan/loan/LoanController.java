@@ -8,10 +8,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import pl.csanecki.microloan.loan.dto.LoanQuery;
 import pl.csanecki.microloan.loan.dto.UserRequest;
-import pl.csanecki.microloan.loan.model.Disposition;
-import pl.csanecki.microloan.loan.model.PositiveDisposition;
-import pl.csanecki.microloan.loan.model.PositivePostponement;
-import pl.csanecki.microloan.loan.model.PostponementDecision;
+import pl.csanecki.microloan.loan.model.disposition.Disposition;
+import pl.csanecki.microloan.loan.model.disposition.PositiveDisposition;
+import pl.csanecki.microloan.loan.model.postponement.PositivePostponement;
+import pl.csanecki.microloan.loan.model.postponement.PostponementDecision;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;

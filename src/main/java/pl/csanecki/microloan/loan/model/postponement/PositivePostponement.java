@@ -1,4 +1,6 @@
-package pl.csanecki.microloan.loan.model;
+package pl.csanecki.microloan.loan.model.postponement;
+
+import pl.csanecki.microloan.loan.model.db.LoanStatus;
 
 import java.time.LocalDate;
 

@@ -1,4 +1,6 @@
-package pl.csanecki.microloan.loan.model;
+package pl.csanecki.microloan.loan.model.disposition;
+
+import pl.csanecki.microloan.loan.model.db.LoanStatus;
 
 public abstract class Disposition {
     private String message;

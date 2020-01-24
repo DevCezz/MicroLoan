@@ -1,4 +1,4 @@
-package pl.csanecki.microloan.loan.model;
+package pl.csanecki.microloan.loan.model.db;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;

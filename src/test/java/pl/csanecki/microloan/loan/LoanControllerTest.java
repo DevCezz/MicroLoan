@@ -10,8 +10,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import pl.csanecki.microloan.loan.dto.LoanQuery;
 import pl.csanecki.microloan.loan.dto.UserRequest;
-import pl.csanecki.microloan.loan.model.LoanStatus;
-import pl.csanecki.microloan.loan.model.PositiveDisposition;
+import pl.csanecki.microloan.loan.model.db.LoanStatus;
+import pl.csanecki.microloan.loan.model.disposition.PositiveDisposition;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
