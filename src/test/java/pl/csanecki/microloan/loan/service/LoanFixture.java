@@ -17,7 +17,7 @@ class LoanFixture {
                 .build();
     }
 
-    static Loan grantedLoanWithClientIp(String clientIp) {
+    static Loan grantedLoanForClientIp(String clientIp) {
         return LoanBuilder
                 .newLoan()
                 .withId(GRANTED_LOAN_ID)
@@ -26,7 +26,7 @@ class LoanFixture {
                 .build();
     }
 
-    static Loan grantedLoanWithEndingDateAndClientIp(LocalDate endingDate, String clientIp) {
+    static Loan grantedLoanWithEndingDateForClientIp(LocalDate endingDate, String clientIp) {
         return LoanBuilder
                 .newLoan()
                 .withId(GRANTED_LOAN_ID)
@@ -36,7 +36,7 @@ class LoanFixture {
                 .build();
     }
 
-    static Loan postponedLoanWithClientIp(String clientIp) {
+    static Loan postponedLoanForClientIp(String clientIp) {
         return LoanBuilder
                 .newLoan()
                 .withId(GRANTED_LOAN_ID)

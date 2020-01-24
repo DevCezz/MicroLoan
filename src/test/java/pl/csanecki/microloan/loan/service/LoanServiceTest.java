@@ -3,8 +3,10 @@ package pl.csanecki.microloan.loan.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
-import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import pl.csanecki.microloan.loan.dto.LoanQuery;
@@ -16,9 +18,12 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.Random;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static pl.csanecki.microloan.loan.service.LoanFixture.*;
@@ -31,21 +36,16 @@ class LoanServiceTest {
     private static int MAX_RISK_HOUR = 6;
     private static int MIN_RISK_HOUR = 0;
     private static String CLIENT_IP = "10.0.0.90";
-    private static String DIFFRENT_CLIENT_IP = "10.0.0.91";
+    private static String DIFFERENT_CLIENT_IP = "10.0.0.91";
 
     private LoanService loanService;
 
     @Mock
     private LoanRepository loanRepository;
 
-    private MockHttpServletRequest mockRequest;
-
     @BeforeEach
     void setUp() {
         loanService = new LoanServiceImpl(loanRepository);
-        mockRequest = new MockHttpServletRequest();
-
-        mockRequest.addHeader("X-FORWARDED-FOR", CLIENT_IP);
         setUpDefaultValuesForLoanService();
     }
 
@@ -92,11 +92,12 @@ class LoanServiceTest {
         assertEquals("Nie spełniono kryteriów do wydania pożyczki", disposition.getMessage());
     }
 
-    @Test
-    void shouldRejectLoanQueryBecauseWasSentBetweenMidnightAndSixAmForMaxAmount() {
+    @ParameterizedTest
+    @MethodSource("dateTimestampParams")
+    void shouldRejectLoanQueryBecauseWasSentBetweenMidnightAndSixAmForMaxAmount(int hour, int minutes) {
         //given
         LoanQuery mockLoanQuery = loanQueryForMaxValue();
-        UserRequest mockUserRequest = userRequestAtRiskHours();
+        UserRequest mockUserRequest = userRequestDuringRiskHoursAt(hour, minutes);
 
         //when
         Disposition disposition = loanService.considerLoanRequest(mockUserRequest, mockLoanQuery);
@@ -105,6 +106,27 @@ class LoanServiceTest {
         assertTrue(disposition instanceof NegativeDisposition);
         assertEquals(LoanStatus.REJECTED, disposition.getLoanStatus());
         assertEquals("Nie spełniono kryteriów do wydania pożyczki", disposition.getMessage());
+    }
+
+    static Stream<Arguments> dateTimestampParams() {
+        Random random = new Random();
+
+        return Stream.of(
+                arguments(MIN_RISK_HOUR, 0),
+                arguments(MAX_RISK_HOUR - 1, 59),
+                arguments(randomizeHour(random), random.nextInt(60)),
+                arguments(randomizeHour(random), random.nextInt(60)),
+                arguments(randomizeHour(random), random.nextInt(60)),
+                arguments(randomizeHour(random), random.nextInt(60)),
+                arguments(randomizeHour(random), random.nextInt(60)),
+                arguments(randomizeHour(random), random.nextInt(60)),
+                arguments(randomizeHour(random), random.nextInt(60)),
+                arguments(randomizeHour(random), random.nextInt(60))
+        );
+    }
+
+    static int randomizeHour(Random random) {
+        return MIN_RISK_HOUR + random.nextInt(MAX_RISK_HOUR - MIN_RISK_HOUR);
     }
 
     @Test
@@ -144,7 +166,7 @@ class LoanServiceTest {
     void shouldPostponeEndingDateOfLoanByTwoWeeks() {
         //given
         LocalDate date = LocalDate.of(2020, 3, 20);
-        Loan grantedLoan = grantedLoanWithEndingDateAndClientIp(date, CLIENT_IP);
+        Loan grantedLoan = grantedLoanWithEndingDateForClientIp(date, CLIENT_IP);
         UserRequest mockUserRequest = commonUserRequest();
 
         when(loanRepository.findById(grantedLoan.getId())).thenReturn(Optional.of(grantedLoan));
@@ -163,7 +185,7 @@ class LoanServiceTest {
     void shouldNotPostponeLoanWhichNotExists() {
         //given
         LocalDate date = LocalDate.of(2020, 3, 20);
-        Loan grantedLoan = grantedLoanWithEndingDateAndClientIp(date, CLIENT_IP);
+        Loan grantedLoan = grantedLoanWithEndingDateForClientIp(date, CLIENT_IP);
         UserRequest mockUserRequest = commonUserRequest();
 
         when(loanRepository.findById(grantedLoan.getId())).thenReturn(Optional.empty());
@@ -179,7 +201,7 @@ class LoanServiceTest {
     @Test
     void shouldNotPostponeLoanWhichOnceHasBeenPostponed() {
         //given
-        Loan postponedLoan = postponedLoanWithClientIp(CLIENT_IP);
+        Loan postponedLoan = postponedLoanForClientIp(CLIENT_IP);
         UserRequest mockUserRequest = commonUserRequest();
 
         when(loanRepository.findById(postponedLoan.getId())).thenReturn(Optional.of(postponedLoan));
@@ -195,7 +217,7 @@ class LoanServiceTest {
     @Test
     void shouldNotPostponeLoanWhenPostponementIsNotMadeByOwner() {
         //given
-        Loan grantedLoan = grantedLoanWithClientIp(CLIENT_IP);
+        Loan grantedLoan = grantedLoanForClientIp(CLIENT_IP);
         UserRequest mockUserRequest = commonUserRequestWithDifferentIp();
 
         when(loanRepository.findById(grantedLoan.getId())).thenReturn(Optional.of(grantedLoan));
@@ -233,16 +255,16 @@ class LoanServiceTest {
         LocalDateTime expectedTimestamp = LocalDateTime.of(2020, 1, 20, 13, 30);
 
         when(userRequest.getRequestTimestamp()).thenReturn(expectedTimestamp);
-        when(userRequest.getIp()).thenReturn(DIFFRENT_CLIENT_IP);
+        when(userRequest.getIp()).thenReturn(DIFFERENT_CLIENT_IP);
 
         return userRequest;
     }
 
-    private UserRequest userRequestAtRiskHours() {
+    private UserRequest userRequestDuringRiskHoursAt(int hour, int minutes) {
         UserRequest userRequest = mock(UserRequest.class);
-        LocalDateTime expectedTimestamp = LocalDateTime.of(2020, 1, 20, MIN_RISK_HOUR + 1, 32);
+        LocalDateTime timestamp = LocalDateTime.of(2020, 1, 20, hour, minutes);
 
-        when(userRequest.getRequestTimestamp()).thenReturn(expectedTimestamp);
+        when(userRequest.getRequestTimestamp()).thenReturn(timestamp);
 
         return userRequest;
     }
