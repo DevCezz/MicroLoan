@@ -148,12 +148,12 @@ class LoanServiceTest {
     }
 
     @Test
-    void shouldRejectLoanQueryWhenThisIsThirdQueryFromTheSameIp() {
+    void shouldRejectLoanQueryWhenThisIsThirdQueryFromTheSameIpAndFirstLoanHasStatusGrantedAndSecondPostponed() {
         //given
         LoanQuery mockLoanQuery = loanQueryForMaxValue();
         UserRequest mockUserRequest = commonUserRequest();
 
-        when(loanRepository.countLoansByClientIpAndStatus(CLIENT_IP, LoanStatus.GRANTED)).thenReturn(MAX_LOAN_VALUE);
+        when(loanRepository.countLoansByClientIpAndStatusNot(CLIENT_IP, LoanStatus.REJECTED)).thenReturn(MAX_LOAN_VALUE);
 
         //when
         Disposition disposition = loanService.considerLoanRequest(mockUserRequest, mockLoanQuery);

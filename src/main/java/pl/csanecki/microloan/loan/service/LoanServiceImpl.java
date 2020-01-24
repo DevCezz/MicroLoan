@@ -84,7 +84,7 @@ public class LoanServiceImpl implements LoanService {
             return new NegativeDisposition("Nie spełniono kryteriów do wydania pożyczki", LoanStatus.REJECTED);
         }
 
-        if(isNumberOfLoanRequestExceeds(userRequest)) {
+        if(isNumberOfLoanRequestExceeded(userRequest)) {
             return new NegativeDisposition("Nie można wydać trzeciej pożyczki", LoanStatus.REJECTED);
         }
 
@@ -114,8 +114,8 @@ public class LoanServiceImpl implements LoanService {
                 userRequest.getRequestTimestamp().getHour() < maxRiskHour;
     }
 
-    private boolean isNumberOfLoanRequestExceeds(UserRequest userRequest) {
-        return loanRepository.countLoansByClientIpAndStatus(userRequest.getIp(), LoanStatus.GRANTED) >= allowedNumberOfLoans;
+    private boolean isNumberOfLoanRequestExceeded(UserRequest userRequest) {
+        return loanRepository.countLoansByClientIpAndStatusNot(userRequest.getIp(), LoanStatus.REJECTED) >= allowedNumberOfLoans;
     }
 
     private Loan registerLoan(UserRequest userRequest, LoanQuery loanQuery) {
