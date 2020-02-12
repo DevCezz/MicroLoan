@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import pl.csanecki.microloan.loan.dto.LoanQuery;
 import pl.csanecki.microloan.loan.dto.UserRequest;
+import pl.csanecki.microloan.loan.dto.factory.UserRequestFactory;
 import pl.csanecki.microloan.loan.model.disposition.Disposition;
 import pl.csanecki.microloan.loan.model.disposition.PositiveDisposition;
 import pl.csanecki.microloan.loan.model.postponement.PositivePostponement;
@@ -31,7 +32,7 @@ public class LoanController {
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     ResponseEntity<PostponementDecision> queryForPostponeLoan(@PathVariable Long loanId, HttpServletRequest request) {
-        UserRequest userRequest = UserRequest.extractFrom(request);
+        UserRequest userRequest = UserRequestFactory.create(request);
         PostponementDecision postponementDecision = loanService.postponeLoan(userRequest, loanId);
 
         return responseConsidering(postponementDecision);
@@ -59,7 +60,7 @@ public class LoanController {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     ResponseEntity<Disposition> queryForLoan(@RequestBody LoanQuery loanQuery, HttpServletRequest request) {
-        UserRequest userRequest = UserRequest.extractFrom(request);
+        UserRequest userRequest = UserRequestFactory.create(request);
         Disposition disposition = loanService.considerLoanRequest(userRequest, loanQuery);
 
         return responseConsidering(disposition);
