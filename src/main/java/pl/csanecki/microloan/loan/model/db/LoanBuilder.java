@@ -4,11 +4,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class LoanBuilder {
-    String clientIp;
-    LocalDate startingDate;
-    LocalDate endingDate;
-    BigDecimal amount;
-    LoanStatus status;
+    private String clientIp;
+    private LocalDate startingDate;
+    private LocalDate endingDate;
+    private BigDecimal amount;
+    private LoanStatus status;
 
     public LoanBuilder() {}
 
@@ -38,6 +38,13 @@ public class LoanBuilder {
     }
 
     public Loan build() {
-        return new Loan(this);
+        Loan loan = new Loan();
+        loan.setClientIp(clientIp);
+        loan.setAmount(amount);
+        loan.setStartingDate(startingDate);
+        loan.setEndingDate(endingDate);
+        loan.setStatus(status);
+
+        return loan;
     }
 }

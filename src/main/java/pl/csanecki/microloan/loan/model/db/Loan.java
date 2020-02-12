@@ -16,14 +16,6 @@ public class Loan {
 
     protected Loan() {}
 
-    public Loan(LoanBuilder builder) {
-        this.clientIp = builder.clientIp;
-        this.startingDate = builder.startingDate;
-        this.endingDate = builder.endingDate;
-        this.amount = builder.amount;
-        this.status = builder.status;
-    }
-
     public Long getId() {
         return id;
     }
