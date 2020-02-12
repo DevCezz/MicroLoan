@@ -5,7 +5,7 @@ import java.util.Objects;
 
 public class LoanQuery {
     private BigDecimal amount;
-    private int periodInMonths;
+    private Integer periodInMonths;
 
     public LoanQuery() {}
 
@@ -22,11 +22,11 @@ public class LoanQuery {
         this.amount = amount;
     }
 
-    public int getPeriodInMonths() {
+    public Integer getPeriodInMonths() {
         return periodInMonths;
     }
 
-    public void setPeriodInMonths(int periodInMonths) {
+    public void setPeriodInMonths(Integer periodInMonths) {
         this.periodInMonths = periodInMonths;
     }
 
@@ -35,8 +35,8 @@ public class LoanQuery {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         LoanQuery loanQuery = (LoanQuery) o;
-        return periodInMonths == loanQuery.periodInMonths &&
-                Objects.equals(amount, loanQuery.amount);
+        return Objects.equals(amount, loanQuery.amount) &&
+                Objects.equals(periodInMonths, loanQuery.periodInMonths);
     }
 
     @Override
