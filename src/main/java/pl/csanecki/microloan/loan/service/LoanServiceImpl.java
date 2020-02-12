@@ -18,6 +18,7 @@ import pl.csanecki.microloan.loan.repository.LoanRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -51,11 +52,9 @@ public class LoanServiceImpl implements LoanService {
     public PostponementDecision postponeLoan(UserRequest userRequest, Long loanId) {
         Optional<Loan> loanEntity = loanRepository.findById(loanId);
 
-        if(loanEntity.isPresent()) {
-            return handlePostponeRequest(userRequest, loanEntity.get());
-        }
-
-        return new NegativePostponement("Nie można odroczyć pożyczki o id " + loanId);
+        return loanEntity
+                .map(l -> handlePostponeRequest(userRequest, loanEntity.get()))
+                .orElse(new NegativePostponement("Nie można odroczyć pożyczki o id " + loanId));
     }
 
     private PostponementDecision handlePostponeRequest(UserRequest userRequest, Loan loan) {
@@ -71,7 +70,7 @@ public class LoanServiceImpl implements LoanService {
     }
 
     private boolean clientIsNotLoanOwner(UserRequest userRequest, Loan foundedLoan) {
-        return !foundedLoan.getClientIp().equals(userRequest.getIp());
+        return !foundedLoan.getClientIp().equals(userRequest.ip);
     }
 
     private boolean loanHasBeenPostponed(Loan foundedLoan) {
@@ -104,8 +103,8 @@ public class LoanServiceImpl implements LoanService {
     }
 
     private boolean isQualifiedForRejection(UserRequest userRequest, LoanQuery loanQuery) {
-        return isNotProperAmount(loanQuery.getAmount()) || isInRiskHourForMaxAmount(userRequest, loanQuery) ||
-                isNegativePeriodsInMonths(loanQuery.getPeriodInMonths());
+        return isNotProperAmount(loanQuery.amount) || isInRiskHourForMaxAmount(userRequest, loanQuery) ||
+                isNegativePeriodsInMonths(loanQuery.periodInMonths);
     }
 
     private boolean isNotProperAmount(BigDecimal queryAmount) {
@@ -121,7 +120,7 @@ public class LoanServiceImpl implements LoanService {
     }
 
     private boolean isInRiskHourForMaxAmount(UserRequest userRequest, LoanQuery loanQuery) {
-        return maxLoanAmountEquals(loanQuery.getAmount()) && queryWasMadeInRiskHours(userRequest);
+        return maxLoanAmountEquals(loanQuery.amount) && queryWasMadeInRiskHours(userRequest);
     }
 
     private boolean maxLoanAmountEquals(BigDecimal queryAmount) {
@@ -129,8 +128,9 @@ public class LoanServiceImpl implements LoanService {
     }
 
     private boolean queryWasMadeInRiskHours(UserRequest userRequest) {
-        return userRequest.getRequestTimestamp().getHour() >= minRiskHour &&
-                userRequest.getRequestTimestamp().getHour() < maxRiskHour;
+        LocalDateTime timestamp = LocalDateTime.parse(userRequest.requestTimestamp);
+
+        return timestamp.getHour() >= minRiskHour && timestamp.getHour() < maxRiskHour;
     }
 
     private boolean isNegativePeriodsInMonths(int periodInMonths) {
@@ -139,14 +139,14 @@ public class LoanServiceImpl implements LoanService {
 
     private boolean isNumberOfLoanRequestExceeded(UserRequest userRequest) {
         List<LoanStatus> countedStatuses = Arrays.asList(LoanStatus.GRANTED, LoanStatus.POSTPONED);
-        return loanRepository.countLoansByClientIpAndStatusIsIn(userRequest.getIp(), countedStatuses) >= allowedNumberOfLoans;
+        return loanRepository.countLoansByClientIpAndStatusIsIn(userRequest.ip, countedStatuses) >= allowedNumberOfLoans;
     }
 
     private Loan registerLoan(UserRequest userRequest, LoanQuery loanQuery) {
         Loan loan = new Loan();
-        loan.setClientIp(userRequest.getIp());
-        loan.setAmount(loanQuery.getAmount());
-        loan.setStartingDate(userRequest.getRequestTimestamp().toLocalDate());
+        loan.setClientIp(userRequest.ip);
+        loan.setAmount(loanQuery.amount);
+        loan.setStartingDate(LocalDate.parse(userRequest.requestTimestamp));
         loan.setEndingDate(calculateEndingDate(userRequest, loanQuery));
         loan.setStatus(LoanStatus.GRANTED);
 
@@ -154,6 +154,8 @@ public class LoanServiceImpl implements LoanService {
     }
 
     private LocalDate calculateEndingDate(UserRequest userRequest, LoanQuery loanQuery) {
-        return userRequest.getRequestTimestamp().toLocalDate().plusMonths(loanQuery.getPeriodInMonths());
+        LocalDate requestDate = LocalDate.parse(userRequest.requestTimestamp);
+
+        return requestDate.plusMonths(loanQuery.periodInMonths);
     }
 }
