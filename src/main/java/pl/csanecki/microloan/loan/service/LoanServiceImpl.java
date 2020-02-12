@@ -7,6 +7,7 @@ import pl.csanecki.microloan.loan.LoanService;
 import pl.csanecki.microloan.loan.dto.LoanQuery;
 import pl.csanecki.microloan.loan.dto.UserRequest;
 import pl.csanecki.microloan.loan.model.db.Loan;
+import pl.csanecki.microloan.loan.model.db.LoanBuilder;
 import pl.csanecki.microloan.loan.model.db.LoanStatus;
 import pl.csanecki.microloan.loan.model.disposition.Disposition;
 import pl.csanecki.microloan.loan.model.disposition.NegativeDisposition;
@@ -143,12 +144,13 @@ public class LoanServiceImpl implements LoanService {
     }
 
     private Loan registerLoan(UserRequest userRequest, LoanQuery loanQuery) {
-        Loan loan = new Loan();
-        loan.setClientIp(userRequest.ip);
-        loan.setAmount(loanQuery.amount);
-        loan.setStartingDate(LocalDate.parse(userRequest.requestTimestamp));
-        loan.setEndingDate(calculateEndingDate(userRequest, loanQuery));
-        loan.setStatus(LoanStatus.GRANTED);
+        Loan loan = new LoanBuilder()
+                .withClientIp(userRequest.ip)
+                .withAmount(loanQuery.amount)
+                .withStartingDate(LocalDate.parse(userRequest.requestTimestamp))
+                .withEndingDate(calculateEndingDate(userRequest, loanQuery))
+                .withStatus(LoanStatus.GRANTED)
+                .build();
 
         return loanRepository.save(loan);
     }
